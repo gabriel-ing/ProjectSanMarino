@@ -1,34 +1,13 @@
 import requests
 import urllib3
 import pandas as pd
-
+from strava_payloads import payloads
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 auth_url = "https://www.strava.com/oauth/token"
 activites_url = "https://www.strava.com/api/v3/athlete/activities"
 
-payload_GI = {
-    'client_id': "129255",
-    'client_secret': '3681592542e4b0c070643fc43372913f3bd92bf0',
-    'refresh_token': '295121019eb432cfce9119e1da31d1784e0d17b2',
-    'grant_type': "refresh_token",
-    'f': 'json'
-}
-payload_HQ = {
-    'client_id': "129272",
-    'client_secret': '52344d101b204f9f48cfeb3a6ba6f3b01988a090',
-    'refresh_token': 'faa597b4f3bafaf3e2bdca0cc9fa7235d97dfc48',
-    'grant_type': "refresh_token",
-    'f': 'json'
-}
-payload_HQ2 = {
-    'client_id': "129295",
-    'client_secret': '785ec5b892a62028231343d10a9088487424dae5',
-    'refresh_token': '2faf87c2b8d5aa69396cf293e6d1d1bb2d08d5d3',
-    'grant_type': "refresh_token",
-    'f': 'json'
-}
-payloads = {'GI':payload_GI, 'HQ':payload_HQ2}
+
 def retrieve_strava_data():
 
     data = {}
@@ -54,6 +33,33 @@ def retrieve_strava_data():
         data[person]=activities
         
     return data
+
+
+def get_strava_positions():
+    #files = ["Strava_runs_GI.csv", "Strava_runs_HQ.csv"]
+    data = retrieve_strava_data()
+    project_dfs = []
+    for df in data.values():
+        df['start_date'] = pd.to_datetime(df['start_date'])
+        project_start_date = pd.to_datetime('26/06/2024', format='%d/%m/%Y').tz_localize('UTC')
+        project_df = df[df['start_date']>=project_start_date]
+        project_dfs.append(project_df)
+    
+    project_df = pd.concat(project_dfs)
+    #print(project_df.head())
+
+    weekly_positions = get_weekly_data(project_df, project_start_date)
+    current_position = project_df["distance"].sum()
+
+    return current_position, weekly_positions, project_df
+
+def get_weekly_data(project_df, project_start_date):
+    project_df["Week of Project"] = project_df["start_date"].dt.isocalendar().week - project_start_date.week
+    weekly_positions = project_df.groupby('Week of Project')["distance"].sum().reset_index()
+    weekly_positions["weekly_positions"] = weekly_positions["distance"].cumsum()
+    return weekly_positions
+
+
 
 if __name__=='__main__':
     data = retrieve_strava_data()

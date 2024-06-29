@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project San Marino Dashboard</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+        #map-container {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #distance_per_person_plot {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #distance_worm {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        iframe {
+            border: none;
+            width: 80%;
+            height: 80%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Project San Marino Dashboard</h1>
+    <div id="map-container">
+        <iframe src="Project_san_marino_map.html" title="Folium Map"></iframe>
+    </div>
+    <div id='distance_per_person_plot'>
+        <iframe src="Distance_per_person_plot.html" title=='distance-plot'></iframe> 
+    </div>
+    <div id='distance_worm'>
+        <iframe src="Distance_worm_plot.html" title=='worm-plot'></iframe> 
+    </div>
+</body>
+</html>

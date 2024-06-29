@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
-from fastkml import kml
-import zipfile
-from shapely.geometry import Point, LineString, Polygon
+from shapely.geometry import Point, LineString
 import folium
 import pandas as pd
-from shapely.geometry import LineString
+from fastkml import kml
 from pyproj import Geod
-from retrieve_strava_data import retrieve_strava_data
+from retrieve_strava_data import get_strava_positions
 from create_target import create_target
+from project_setup import get_line_start_end
+import zipfile
+import matplotlib.pyplot as plt
+import plotly.express as px
 
-def point_at_distance(line, distance):
+
+
+def _point_at_distance_(line, distance):
     """
     Calculate the point which is `distance` meters into the `LineString`.
 
@@ -46,7 +50,29 @@ def point_at_distance(line, distance):
     # If distance is exactly at the end of the LineString
     return Point(line.coords[-1])
 
+def point_at_distance_lookup(distance, lookup_file = 'distance_lookup.csv'):
+    
+    df = pd.read_csv(lookup_file)
+    if distance>df['Accumalated Distance'].iloc[-1] or distance<0:
+        raise ValueError("Distance must be between 0 and the length of the LineString.")
+    
+    
+    index = df[df['Accumalated Distance']>(distance)].index[0]
+    
+    boundary_rows = df.iloc[index-1: index+1]
 
+    accumulated_distance=boundary_rows['Accumalated Distance'].iloc[0]
+    segment_distance = boundary_rows['Segment Distance'].iloc[1]
+    segment_fraction = (distance - accumulated_distance) / segment_distance
+
+    p1x = boundary_rows["Point x"].iloc[0]
+    p1y = boundary_rows["Point y"].iloc[0]
+    p2x = boundary_rows["Point x"].iloc[1]
+    p2y = boundary_rows["Point y"].iloc[1]
+
+    x = p1x + segment_fraction * (p2x - p1x)
+    y = p1y + segment_fraction * (p2y - p1y)
+    return Point(x, y)
 
 def get_line_start_end(kmz_file):
     with zipfile.ZipFile(kmz_file, 'r') as kmz:
@@ -69,7 +95,7 @@ def get_position_data(file):
     df = pd.read_excel(file, 'Sheet1')
     current_distance = df["Distance (km)"].sum()
     print(f"Current distance {current_distance}")
-    current_position = point_at_distance(line, current_distance)
+    current_position = point_at_distance_lookup(current_distance)
 
     df["Date"] = pd.to_datetime(df["Date"])
     df["Week of Project"] = df["Date"].dt.isocalendar().week - df["Date"][0].week
@@ -87,46 +113,48 @@ def create_map(start, end, line, current_position, weekly_positions, target=None
     folium.Marker(location=[end.y, end.x], popup="End point", icon=folium.Icon(color='darkblue')).add_to(mymap)
 
     for i , value in enumerate(weekly_positions["weekly_positions"]):
-        pos = point_at_distance(line, value)
+        pos = point_at_distance_lookup(value)
         folium.Marker(location=[pos.y, pos.x], popup=f"Position after week {weekly_positions['Week of Project'][i]}", icon=folium.Icon(color='purple')).add_to(mymap)
-    target_position = point_at_distance(line, target)
+    target_position = point_at_distance_lookup(target)
     folium.Marker(location=[target_position.y, target_position.x], popup=f'Target at end of day: {pd.Timestamp.now().date()}', icon=folium.Icon(color='orange',icon_color='white',icon='warning-sign')).add_to(mymap)
     folium.Marker(location=[current_position.y, current_position.x], popup=f"Position as of {pd.Timestamp.now()}", icon=folium.Icon(color='green')).add_to(mymap)
 
     mymap.save("Project_san_marino_map.html")
 
-def get_strava_data():
-    #files = ["Strava_runs_GI.csv", "Strava_runs_HQ.csv"]
-    data = retrieve_strava_data()
-    project_dfs = []
-    for df in data.values():
-        df['start_date'] = pd.to_datetime(df['start_date'])
-        project_start_date = pd.to_datetime('26/06/2024', format='%d/%m/%Y').tz_localize('UTC')
-        project_df = df[df['start_date']>=project_start_date]
-        project_dfs.append(project_df)
+def plot_per_person(df):
+    grouped = df.groupby(['User','sport_type'])["distance"].sum().reset_index()
+    grouped["Sport Type"] = grouped["sport_type"]
+    grouped['Distance'] = grouped['distance']/1000
+    fig = px.bar(grouped, x="User", y="Distance", color="Sport Type", title="Distance by Person and Sport",width=400, height=600)
+    fig.write_html('Distance_per_person_plot.html')
+
+def plot_worm(df, df_target):
+    df_target = df_target.copy()
+    df['Activity Date'] = df['start_date'].dt.date
+    grouped = df.groupby('Activity Date')['distance'].sum().reset_index()
+    grouped['Distance'] = grouped['distance'].cumsum()/1000
     
-    project_df = pd.concat(project_dfs)
-    #print(project_df.head())
-
-    weekly_positions = get_weekly_data(project_df, project_start_date)
-    current_position = project_df["distance"].sum()
-
-    return current_position, weekly_positions, project_df
-
-def get_weekly_data(project_df, project_start_date):
-    project_df["Week of Project"] = project_df["start_date"].dt.isocalendar().week - project_start_date.week
-    weekly_positions = project_df.groupby('Week of Project')["distance"].sum().reset_index()
-    weekly_positions["weekly_positions"] = weekly_positions["distance"].cumsum()
-    return weekly_positions
+    fig = px.line(grouped, x='Activity Date', y="Distance", title='Distance Worm',color_discrete_sequence=['blue'], width=800, height=600)
+    df_target['Target']=df_target['Target']/1000
+    fig.add_trace(px.line(df_target, x='Date', y='Target', title='Target',color_discrete_sequence=['Red']).data[0])
+    
+    #fig = px.line(target_df, x='Date', y='Target')
+    fig.write_html('Distance_worm_plot.html')
 
 if __name__=='__main__':
     line, start, end = get_line_start_end('Directions_file.kmz')
+    lookup_file = "Distance_lookup.csv"
     #current_position, weekly_positions = get_position_data('Distance_tracker.xlsx')
-    current_distance, weekly_positions, position_df = get_strava_data()
-    current_position = point_at_distance(line, current_distance)
+    current_distance, weekly_positions, position_df = get_strava_positions()
+    plot_per_person(position_df)
+    
+    #print(position_df.head())
+    
+    current_position = point_at_distance_lookup(current_distance, lookup_file)
 
     start_date = '26/06/2024'
     target_date = '24/08/2024'
-    current_target = create_target(start_date, target_date, 2196000)
+    current_target, target_df = create_target(start_date, target_date, 2196000)
+    plot_worm(position_df, target_df)
     print(f"The current total distance is {round(current_distance/1000,2)}km")
     create_map(start, end, line, current_position, weekly_positions, current_target)
