@@ -18,7 +18,7 @@ Step 1: Create a route using [my-maps from Google](https://www.google.com/maps/d
 
 
 Step 2: Create Strava payloads file (strava_payloads.py).
-This requires setting up the strava API to your strava account, this took me ages to get my head around but I recommend the information in these articles by: [Ksawery Lejczak](https://medium.com/@lejczak.learn/get-your-strava-activity-data-using-python-2023-%EF%B8%8F-b03b176965d0), [Matt Ambrogi](https://towardsdatascience.com/using-the-strava-api-and-pandas-to-explore-your-activity-data-d94901d9bfde) and the [video](https://www.youtube.com/watch?v=sgscChKfGyg&t=258s&ab_channel=franchyze923) and [github](https://github.com/franchyze923/Code_From_Tutorials/blob/master/Strava_Api/strava_api.py) from Franchyze923.
+This requires setting up the strava API to your strava account, this took me ages to get my head around but I recommend the information in these articles by: [Ksawery Lejczak](https://medium.com/@lejczak.learn/get-your-strava-activity-data-using-python-2023-%EF%B8%8F-b03b176965d0), [Matt Ambrogi](https://towardsdatascience.com/using-the-strava-api-and-pandas-to-explore-your-activity-data-d94901d9bfde) and the [video](https://www.youtube.com/watch?v=sgscChKfGyg&t=258s&ab_channel=franchyze923) and [github repo](https://github.com/franchyze923/Code_From_Tutorials/blob/master/Strava_Api/strava_api.py) from Franchyze923.
 
 Once you have the Strava information for each participant  (the client ID, Client Secret and Refresh Token (with scope read_all)). Add these into dictionaries in the formats shown in Strava_payloads_example.py in this repository. Note, all credit for how to set this up goes to [franchyze923](https://github.com/franchyze923), who's tutorials were super helpful. 
 
@@ -28,14 +28,17 @@ Step 3: Fill in parameters file:
 
 Step 4: Install requirements.txt
 Install the requirements with pip:
+
 `pip install -r requirements.txt`
 
 After these bits of set-ups are done, the project_setup.py file should be run:
+
     `python project_setup.py`
 
 This creates a distance-position look up file ('Distance_lookup.csv') which speeds up finding your current location, it also creates a doc.kml file to give the route in a more useable format. 
 
 After running project_setup.py, the main python file can be run: 
+
     `python project_san_marino.py`
 
 Now try opening index.html and hopefully the dashboard should be built. 
