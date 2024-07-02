@@ -36,7 +36,6 @@ def retrieve_strava_data():
 
 
 def get_strava_positions():
-    #files = ["Strava_runs_GI.csv", "Strava_runs_HQ.csv"]
     data = retrieve_strava_data()
     project_dfs = []
     for df in data.values():
