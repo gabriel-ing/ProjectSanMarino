@@ -9,7 +9,8 @@ This program functions by downloading data from Strava, the common exercise trac
 <img src=Example_dash.png width=700px, alt='example dashboard'>
 
 
-There are two things you need to do before using these scripts. 
+There are a few things you need to do before using these scripts. 
+
 Step 1: Create a route using [my-maps from Google](https://www.google.com/maps/d/). 
     - Create directions 
     <img src=Create_directions.png alt='example dashboard'>
@@ -29,16 +30,16 @@ Step 3: Fill in parameters file:
 Step 4: Install requirements.txt
 Install the requirements with pip:
 
-`pip install -r requirements.txt`
+    pip install -r requirements.txt
 
 After these bits of set-ups are done, the project_setup.py file should be run:
 
-    `python project_setup.py`
+    python project_setup.py
 
 This creates a distance-position look up file ('Distance_lookup.csv') which speeds up finding your current location, it also creates a doc.kml file to give the route in a more useable format. 
 
 After running project_setup.py, the main python file can be run: 
 
-    `python project_san_marino.py`
+    python project_san_marino.py
 
 Now try opening index.html and hopefully the dashboard should be built. 
