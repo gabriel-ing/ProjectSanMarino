@@ -11,8 +11,8 @@ from project_setup import get_line_start_end
 import zipfile
 import matplotlib.pyplot as plt
 import plotly.express as px
-
-
+import polyline
+from parameters import start_date, target_date, foot_target 
 
 def _point_at_distance_(line, distance):
     """
@@ -105,7 +105,7 @@ def get_position_data(file):
 
 
 def create_map(start, end, line, current_position, weekly_positions, target=None):
-    mymap = folium.Map(location=(start.coords[0][1],start.coords[0][0]), zoom_start=6)
+    mymap = folium.Map(location=(current_position.coords[0][1],current_position.coords[0][0]), zoom_start=6)
 
     # Add the LineString to the map
     folium.PolyLine(locations=[(coord[1], coord[0]) for coord in line.coords], color='blue').add_to(mymap)
@@ -125,7 +125,7 @@ def plot_per_person(df):
     grouped = df.groupby(['User','sport_type'])["distance"].sum().reset_index()
     grouped["Sport Type"] = grouped["sport_type"]
     grouped['Distance'] = grouped['distance']/1000
-    fig = px.bar(grouped, x="User", y="Distance", color="Sport Type", title="Distance by Person and Sport",width=400, height=600)
+    fig = px.bar(grouped, x="User", y="Distance", color="Sport Type", title="Distance by Person and Sport",width=300, height=400)
     fig.write_html('Distance_per_person_plot.html')
 
 def plot_worm(df, df_target):
@@ -134,12 +134,44 @@ def plot_worm(df, df_target):
     grouped = df.groupby('Activity Date')['distance'].sum().reset_index()
     grouped['Distance'] = grouped['distance'].cumsum()/1000
     
-    fig = px.line(grouped, x='Activity Date', y="Distance", title='Distance Worm',color_discrete_sequence=['blue'], width=800, height=600)
+    fig = px.line(grouped, x='Activity Date', y="Distance", title='Distance Worm',color_discrete_sequence=['blue'], width=600, height=400)
     df_target['Target']=df_target['Target']/1000
     fig.add_trace(px.line(df_target, x='Date', y='Target', title='Target',color_discrete_sequence=['Red']).data[0])
     
     #fig = px.line(target_df, x='Date', y='Target')
     fig.write_html('Distance_worm_plot.html')
+
+def plot_routes_map(df, start):
+    df['map.polyline'] = df['map.summary_polyline'].apply(polyline.decode)
+    routes_map = folium.Map(location=(start.coords[0][1],start.coords[0][0]), zoom_start=11)
+    colors = ['purple', 'red', 'blue', 'green','yellow']
+    # Add the LineString to the map
+    for i, unique in enumerate(df['User'].unique()):
+        df_filtered = df[df['User']==unique]
+        for row in df_filtered.iloc(axis=0):
+            line = row['map.polyline']
+            if line:
+                folium.PolyLine(locations=line, color=colors[i], weight=4, opacity=0.4).add_to(routes_map)
+
+    routes_map.save('Routes.html')
+
+def print_targets(foot_target, df, target_df):
+    overall_target = target_df['Target'].iloc[-1]
+    
+    foot_total = df[df['sport_type'].isin(['Run', 'Walk', 'Hike'])]['distance'].sum()
+    bike_total = df[df['sport_type'].isin(['Ride'])]['distance'].sum()
+
+
+    overall_total = df['distance'].sum()
+
+    current_date = pd.Timestamp.now().date()
+    date_percentage = float(100*(target_df[target_df['Date'].dt.date==current_date]['Day'])/(target_df['Day'].iloc[-1]))
+
+    print(f'{foot_total/foot_target *100:.1f}% of the way to the foot target')
+    print(f'{bike_total/overall_total *100:.1f}% of current distance covered by bike')
+
+    print(f'{overall_total/overall_target *100:.1f}% of the way to the overall target in {date_percentage:.1f}% of total time')
+    
 
 if __name__=='__main__':
     line, start, end = get_line_start_end('Directions_file.kmz')
@@ -147,14 +179,14 @@ if __name__=='__main__':
     #current_position, weekly_positions = get_position_data('Distance_tracker.xlsx')
     current_distance, weekly_positions, position_df = get_strava_positions()
     plot_per_person(position_df)
-    
+    plot_routes_map(position_df, start)
     #print(position_df.head())
     
     current_position = point_at_distance_lookup(current_distance, lookup_file)
 
-    start_date = '26/06/2024'
-    target_date = '24/08/2024'
     current_target, target_df = create_target(start_date, target_date, 2196000)
     plot_worm(position_df, target_df)
     print(f"The current total distance is {round(current_distance/1000,2)}km")
     create_map(start, end, line, current_position, weekly_positions, current_target)
+    
+    print_targets(foot_target, position_df, target_df)
