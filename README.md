@@ -13,10 +13,14 @@ There are a few things you need to do before using these scripts.
 
 Step 1: Create a route using [my-maps from Google](https://www.google.com/maps/d/). 
     - Create directions 
+
     <img src=Create_directions.png alt='example dashboard'>
-    - Export route as kmz 
+    
+    - Export route as kmz:
+    
     <img src=Export_kmz.png alt='example dashboard'>
 
+    - Rename kmz file 'Directions_file.kmz' and move it to the main directory
 
 Step 2: Create Strava payloads file (strava_payloads.py).
 This requires setting up the strava API to your strava account, this took me ages to get my head around but I recommend the information in these articles by: [Ksawery Lejczak](https://medium.com/@lejczak.learn/get-your-strava-activity-data-using-python-2023-%EF%B8%8F-b03b176965d0), [Matt Ambrogi](https://towardsdatascience.com/using-the-strava-api-and-pandas-to-explore-your-activity-data-d94901d9bfde) and the [video](https://www.youtube.com/watch?v=sgscChKfGyg&t=258s&ab_channel=franchyze923) and [github repo](https://github.com/franchyze923/Code_From_Tutorials/blob/master/Strava_Api/strava_api.py) from Franchyze923.

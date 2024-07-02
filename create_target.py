@@ -1,4 +1,5 @@
 import pandas as pd
+from parameters import start_date, target_date, foot_target 
 
 def create_target(start_date, target_date, total_distance):
     start_date = pd.to_datetime(start_date, format='%d/%m/%Y')
@@ -21,6 +22,4 @@ def create_target(start_date, target_date, total_distance):
     return current_target, target_df
 
 if __name__=='__main__':
-    start_date = '26/06/2024'
-    target_date = '24/08/2024'
     current_target, target_df = create_target(start_date, target_date, 2196000)

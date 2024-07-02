@@ -3,7 +3,6 @@ shapely
 fastkml
 folium
 pyproj
-zipfile
 matplotlib
 plotly
 polyline
