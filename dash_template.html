@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project San Marino Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+    <header>
+        <div id='title'>Project San Marino</div>
+        <div id='stats-banner'>
+            <ul>
+                <li>Current Distance: <strong>{current_distance}</strong></li>
+                <li>Completion Percentage: <strong>{completion_percentage}</strong></li>
+                <li>Days Remaining: <strong>{days_remaining}</strong></li>
+                <li>Current Rate: <strong>{current_rate}</strong></li>
+                <li>Required Rate: <strong>{required_rate}</strong></li>
+                <li>Days Ahead/Behind Schedule: <strong>{days_ahead}</strong></li>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+
+        <div id="map-container" class="iframe-container">
+            <iframe src="Project_san_marino_map.html" title="Folium Map"></iframe>
+        </div>
+        <div id='distance_per_person_plot' class="iframe-container">
+            <iframe src="Distance_per_person_plot.html" title="Distance per Person Plot"></iframe>
+        </div>
+        <div id='distance_worm' class="iframe-container">
+            <iframe src="Distance_worm_plot.html" title="Distance Worm Plot"></iframe>
+        </div>
+        <div id='route-map' class='iframe-container'>
+            <iframe src='Routes.html' title="Route map"></iframe>
+        </div>
+    </main>
+</body>
+
+</html>

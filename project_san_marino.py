@@ -165,6 +165,7 @@ def print_targets(foot_target, df, target_df):
     overall_total = df['distance'].sum()
 
     current_date = pd.Timestamp.now().date()
+
     date_percentage = float(100*(target_df[target_df['Date'].dt.date==current_date]['Day'])/(target_df['Day'].iloc[-1]))
 
     print(f'{foot_total/foot_target *100:.1f}% of the way to the foot target')
@@ -172,6 +173,40 @@ def print_targets(foot_target, df, target_df):
 
     print(f'{overall_total/overall_target *100:.1f}% of the way to the overall target in {date_percentage:.1f}% of total time')
     
+
+def create_html(current_distance, completion_percentage, days_remaining, current_rate, required_rate, days_ahead): 
+    with open('dash_template.html') as f:
+        s = f.read()
+    s= s.replace('{current_distance}', f'{current_distance/1000:.2f} km')
+    s= s.replace('{completion_percentage}', f'{completion_percentage:.1f} %')
+    s= s.replace('{days_remaining}', f'{days_remaining}')
+    s= s.replace('{current_rate}', f'{current_rate:.2f} km/day')
+    s= s.replace('{required_rate}', f'{required_rate:.2f} km/day')
+    if days_ahead>=0:
+        s = s.replace('{days_ahead}', f'{days_ahead} ahead')
+    else:
+        s = s.replace('{days_ahead}', f'{days_ahead} behind')
+    with open('dash.html', 'w') as outfile:
+        outfile.write(s)
+
+
+def calculate_stats(start_date, target_date, current_distance, target_distance, target_df):
+    start_date = pd.to_datetime(start_date, format='%d/%m/%Y')
+    target_date = pd.to_datetime(target_date, format='%d/%m/%Y')
+    current_date = pd.Timestamp.now()
+    days_remaining = (target_date-current_date).days
+
+    distance_remaining = target_distance - current_distance
+    
+    ndays_done = (current_date - start_date).days
+    current_rate = (current_distance/ndays_done)/1000
+    required_rate = (distance_remaining/days_remaining)/1000
+
+    completion_percentage= current_distance/target_distance *100
+
+
+    days_ahead = target_df[target_df['Target']>current_distance]['Day'].iloc[0]-ndays_done
+    return completion_percentage, days_remaining, current_rate, required_rate, days_ahead
 
 if __name__=='__main__':
     line, start, end = get_line_start_end('Directions_file.kmz')
@@ -181,12 +216,18 @@ if __name__=='__main__':
     plot_per_person(position_df)
     plot_routes_map(position_df, start)
     #print(position_df.head())
-    
+    geod = Geod(ellps='WGS84')
+    target_distance = geod.geometry_length(line)
+
     current_position = point_at_distance_lookup(current_distance, lookup_file)
 
-    current_target, target_df = create_target(start_date, target_date, 2196000)
+    current_target, target_df = create_target(start_date, target_date, target_distance)
+    
     plot_worm(position_df, target_df)
     print(f"The current total distance is {round(current_distance/1000,2)}km")
     create_map(start, end, line, current_position, weekly_positions, current_target)
     
     print_targets(foot_target, position_df, target_df)
+    completion_percentage, days_remaining, current_rate, required_rate,days_ahead = calculate_stats(start_date, target_date, current_distance, target_distance,target_df)
+
+    create_html(current_distance, completion_percentage, days_remaining, current_rate, required_rate, days_ahead)
